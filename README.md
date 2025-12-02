@@ -1,3 +1,5 @@
-# pi-2025-semestre-2
+import { PrismaClient } from "../../generated/prisma/client.js";
 
-# VIVACV - Orçamentos
+const prisma = new PrismaClient()
+
+export default prisma.client

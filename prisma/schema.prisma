@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  //url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  budgets   Budget[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String?
+  company   String?
+  budgets   Budget[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Service {
+  id            Int          @id @default(autoincrement())
+  name          String
+  description   String?
+  unitPrice     Float // Preco base (ex: preço por hora, por m², etc.)
+  unitOfMeasure String // "hora", "m²", "unidade"
+  items         BudgetItem[] // Este servico pode pode estar em varios itens de orcamento
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Budget {
+  id          Int          @id @default(autoincrement())
+  title       String
+  status      BudgetStatus @default(DRAFT)
+  totalAmount Float        @default(0) // Custo total, calculado
+  validUntil  DateTime? // Data de validade da proposta
+  clientId    Int
+  client      Client       @relation(fields: [clientId], references: [id])
+  createdById Int
+  createdBy   User         @relation(fields: [createdById], references: [id])
+  items       BudgetItem[] // Os itens que estao dentro este orçamento
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model BudgetItem {
+  id        String   @id @default(uuid())
+  quantity  Float
+  unitPrice Float // O preço unitário *neste orçamento* (pode ser diferente do catálogo)
+  total     Float // quantity * unitPrice
+  serviceId Int
+  service   Service  @relation(fields: [serviceId], references: [id])
+  budgetId  Int
+  budget    Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// É um tipo de dado que restrige os valores de um campo, garantir que someste estes valores serão aceitos
+enum BudgetStatus {
+  DRAFT // Rascunho, ainda sendo montado
+  SENT // Enviado para o cliente
+  APPROVED // Aprovado pelo cliente
+  REJECTED // Rejeitado pelo cliente
+  COMPLETED // Concluido/Executado
+}
